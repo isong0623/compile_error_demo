@@ -1,0 +1,70 @@
+// Copyright 2014 The Flutter Authors. All rights reserved.
+// Use of this source code is governed by a BSD-style license that can be
+// found in the LICENSE file.
+def tmpFile = rootDir
+while(tmpFile.getParentFile().getAbsolutePath().contains("compile_error_demo")){
+    tmpFile = tmpFile.getParentFile()
+}
+def projectDir = tmpFile.getAbsolutePath()
+
+
+include ':app'
+
+include ":module:flutter"
+project(":module:flutter").projectDir = new File("$projectDir\\compile_error_module_1\\.android\\Flutter")
+
+include ':module:app'
+project(":module:app").projectDir = new File("$projectDir\\compile_error_module_1\\.android\\app")
+
+import groovy.json.JsonSlurper
+def addProject(String projectName,String projectPath){
+    include projectName
+    project(projectName).projectDir = new File(projectPath)
+}
+
+def localPropertiesFile = new File(rootProject.projectDir, "local.properties")
+def properties = new Properties()
+
+assert localPropertiesFile.exists()
+localPropertiesFile.withReader("UTF-8") { reader -> properties.load(reader) }
+
+def flutterSdkPath = properties.getProperty("flutter.sdk")
+assert flutterSdkPath != null, "flutter.sdk not set in local.properties"
+apply from: "$flutterSdkPath/packages/flutter_tools/gradle/app_plugin_loader.gradle"
+
+
+def moduleRootDir           = "$projectDir\\compile_error_module_1"
+def flutterPluginFilePath   = "$moduleRootDir/.flutter-plugins-dependencies"
+def flutterPluginFile       = new File(flutterPluginFilePath)
+
+if(flutterPluginFile.exists()){
+    def object = new JsonSlurper().parseText(flutterPluginFile.text)
+    assert object instanceof Map
+    assert object.plugins instanceof Map
+    assert object.plugins.android instanceof List
+    // Includes the Flutter plugins that support the Android platform.
+    object.plugins.android.each { androidPlugin ->
+        assert androidPlugin.name instanceof String
+        assert androidPlugin.path instanceof String
+        def pluginDirectory = new File(androidPlugin.path, 'android')
+        assert pluginDirectory.exists()
+        include ":${androidPlugin.name}"
+        project(":${androidPlugin.name}").projectDir = pluginDirectory
+    }
+}
+
+gradle.getGradle().projectsLoaded { g ->
+    g.rootProject.beforeEvaluate { p ->
+        def _mainModuleName = binding.variables['mainModuleName']
+        if (_mainModuleName != null && !_mainModuleName.empty) {
+            p.ext.mainModuleName = _mainModuleName
+        }
+    }
+    g.rootProject.afterEvaluate { p ->
+        p.subprojects { sp ->
+            if (sp.name != 'flutter') {
+                sp.evaluationDependsOn(":module:flutter")
+            }
+        }
+    }
+}

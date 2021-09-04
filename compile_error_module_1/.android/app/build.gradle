@@ -1,0 +1,66 @@
+def flutterPluginVersion = 'managed'
+def isBuildApplication = rootDir.getAbsolutePath().contains("compile_error_module_1")
+
+def tmpFile = rootDir
+while(tmpFile.getParentFile().getAbsolutePath().contains("compile_error_demo")){
+    tmpFile = tmpFile.getParentFile()
+}
+def projectDir = tmpFile.getAbsolutePath()
+
+if(isBuildApplication)
+    apply plugin: 'com.android.application'
+else
+    apply plugin: 'com.android.library'
+
+
+android {
+    compileSdkVersion 28
+
+    compileOptions {
+        sourceCompatibility 1.8
+        targetCompatibility 1.8
+    }
+
+    defaultConfig {
+        if(isBuildApplication)
+        applicationId "com.example.compile_error_module_1.host"
+
+        minSdkVersion 16
+        targetSdkVersion 28
+        versionCode 1
+        versionName "1.0"
+    }
+
+    buildTypes {
+        profile {
+            initWith debug
+        }
+        release {
+            signingConfig signingConfigs.debug
+        }
+    }
+
+    sourceSets {
+        main {
+            res.srcDirs = [
+                    'src/main/res'
+            ]
+            if (!isBuildApplication) {
+                manifest.srcFile "$projectDir\\compile_error_module_1\\.android\\app\\src\\main\\module\\AndroidManifest.xml"
+            }
+        }
+    }
+
+}
+
+buildDir = new File(rootProject.projectDir, "../build/host")
+dependencies {
+    if(isBuildApplication)
+    implementation project(':flutter')
+    else
+    implementation project(':module:flutter')
+
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation 'androidx.appcompat:appcompat:1.0.2'
+    implementation 'androidx.constraintlayout:constraintlayout:1.1.3'
+}
