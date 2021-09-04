@@ -10,11 +10,11 @@ def projectDir = tmpFile.getAbsolutePath()
 
 include ':app'
 
-include ":module:flutter"
-project(":module:flutter").projectDir = new File("$projectDir\\compile_error_module_1\\.android\\Flutter")
+//include ":module:flutter"
+//project(":module:flutter").projectDir = new File("$projectDir\\compile_error_module_1\\.android\\Flutter")
 
-include ':module:app'
-project(":module:app").projectDir = new File("$projectDir\\compile_error_module_1\\.android\\app")
+include ':module'
+project(":module").projectDir = new File("$projectDir\\compile_error_module_1\\.android\\app")
 
 import groovy.json.JsonSlurper
 def addProject(String projectName,String projectPath){
@@ -63,7 +63,7 @@ gradle.getGradle().projectsLoaded { g ->
     g.rootProject.afterEvaluate { p ->
         p.subprojects { sp ->
             if (sp.name != 'flutter') {
-                sp.evaluationDependsOn(":module:flutter")
+                sp.evaluationDependsOn(":app")
             }
         }
     }

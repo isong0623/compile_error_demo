@@ -1,6 +1,19 @@
 def flutterPluginVersion = 'managed'
 def isBuildApplication = rootDir.getAbsolutePath().contains("compile_error_module_1")
 
+def localProperties = new Properties()
+def localPropertiesFile = rootProject.file('local.properties')
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.withReader('UTF-8') { reader ->
+        localProperties.load(reader)
+    }
+}
+
+def flutterRoot = localProperties.getProperty('flutter.sdk')
+if (flutterRoot == null) {
+    throw new GradleException("Flutter SDK not found. Define location with flutter.sdk in the local.properties file.")
+}
+
 def tmpFile = rootDir
 while(tmpFile.getParentFile().getAbsolutePath().contains("compile_error_demo")){
     tmpFile = tmpFile.getParentFile()
@@ -9,8 +22,15 @@ def projectDir = tmpFile.getAbsolutePath()
 
 if(isBuildApplication)
     apply plugin: 'com.android.application'
-else
+else{
     apply plugin: 'com.android.library'
+
+    apply from: "$flutterRoot/packages/flutter_tools/gradle/flutter.gradle"
+
+    flutter {
+        source '../../..'
+    }
+}
 
 
 android {
@@ -55,10 +75,9 @@ android {
 
 buildDir = new File(rootProject.projectDir, "../build/host")
 dependencies {
-    if(isBuildApplication)
-    implementation project(':flutter')
-    else
-    implementation project(':module:flutter')
+    if(isBuildApplication){
+        implementation project(':flutter')
+    }
 
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation 'androidx.appcompat:appcompat:1.0.2'

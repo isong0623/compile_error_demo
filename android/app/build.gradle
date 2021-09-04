@@ -50,8 +50,8 @@ android {
 }
 
 dependencies{
-    api project(":module:flutter")
-    api project(":module:app")
+//    api project(":module:flutter")
+    api project(":module")
 }
 
 flutter {
